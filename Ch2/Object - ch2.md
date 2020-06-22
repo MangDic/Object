@@ -81,7 +81,9 @@
   > 메시지와 메소드는 다른 개념
   >
   > Movie는 DiscountPolicy의 인스턴스에 calculateDiscountAmount 메시지를 전송한다
+  >
   > Movie 와 협력하는 객체가 AmountDiscountPolicy의 인스턴스라면 AmountDiscountPolicy에서 오버라이딩한 메소드 실행.
+  >
   > Movie 와 협력하는 객체가 PercentDiscountPolicy의 인스턴스라면 PercentDiscountPolicy에서 오버라이딩한 메소드 실행.
   >
   > 이것이 다형성 !
