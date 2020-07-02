@@ -102,89 +102,45 @@
 
     > ~~~ Movie
     > public class Movie {
-    >     public String getTitle() {
-    >         return title;
-    >     }
-    > 
-    >     public void setTitle(String title) {
-    >         this.title = title;
-    >     }
-    > 
-    >     public Duration getRunningTime() {
-    >         return runningTime;
-    >     }
-    > 
-    >     public void setRunningTime(Duration runningTime) {
-    >         this.runningTime = runningTime;
-    >     }
-    > 
-    >     public Money getFee() {
-    >         return fee;
-    >     }
-    > 
-    >     public void setFee(Money fee) {
-    >         this.fee = fee;
-    >     }
-    > 
-    >     public List<DiscountCondition> getDiscountCondition() {
-    >         return Collections.unmodifiableList(discountCondition);
-    >     }
-    > 
-    >     public void setDiscountCondition(List<DiscountCondition> discountCondition) {
-    >         this.discountCondition = discountCondition;
-    >     }
-    > 
-    >     public MovieType getMovieType() {
-    >         return movieType;
-    >     }
-    > 
-    >     public void setMovieType(MovieType movieType) {
-    >         this.movieType = movieType;
-    >     }
-    > 
-    >     public Money getDiscountAmount() {
-    >         return discountAmount;
-    >     }
-    > 
-    >     public void setDiscountAmount(Money discountAmount) {
-    >         this.discountAmount = discountAmount;
-    >     }
-    > 
-    >     public double getDiscountPercent() {
-    >         return discountPercent;
-    >     }
-    > 
-    >     public void setDiscountPercent(double discountPercent) {
-    >         this.discountPercent = discountPercent;
-    >     }
+    >    
+    >    	private String title;
+    >    	private Duration runningTime;
+    > 	private Money fee;
+    >    	private List<DiscountCondition> discountCondition;
+    >    	
+    >    	private MovieType movieType;
+    > 	private Money discountAmount;
+    >    	private double discountPercent;
+    >     
+    >    	// getter, setter...
     > }
-    > ~~~
-    >
-    > - Collections.unmodifiableList
-    >
-    >   자바 컬렉션에서 리스트에 데이터를 추가한 뒤 더 이상 데이터 삭제, 추가를 막기 위해 사용
-    >
-    >   사용한 배열은 Read-Only가 된다
-    >
-    >   null 값이나 다른 배열을 통해서 초기화는 가능
-
+    >    ~~~
+    >    
+    >    - Collections.unmodifiableList
+    > 
+    >      자바 컬렉션에서 리스트에 데이터를 추가한 뒤 더 이상 데이터 삭제, 추가를 막기 위해 사용
+    >    
+    >      사용한 배열은 Read-Only가 된다
+    > 
+    >      null 값이나 다른 배열을 통해서 초기화는 가능
     
-
+    
+    
   - 할인 조건 구하기
-
+  
     - 할인 조건을 구현하는 데 필요한 데이터 ? 
-
+  
       먼저 현재의 할인 조건의 종류를 저장할 데이터(DiscountConditionType) 필요
-
+  
       ~~~ DiscountConditionType
       public enum DiscountConditionType {
       	SEQUENCE,	// 순번 조건
       	PERIOD		// 기간 조건
       }
       ~~~
-
+  
     - 할인 조건을 구현하는 DiscountCondition은 할인 조건의 타입을 저장할 인스턴스 변수인 type 포함
-
+  
       ~~~ DiscountCondition
       public class DiscountCondition {
       	private DiscountConditionType type;
@@ -198,93 +154,37 @@
       	private LocalTime endTime;
       }
       ~~~
-
+  
     - 마찬가지로 캡슐화를 위해 메소드 추가
-
+  
       ~~~ DiscountCondition
       public class DiscountCondition {
       
-          public DiscountConditionType getType() {
-              return type;
-          }
+      	private DayOfWeek dayOfWeek;
+      	private LocalTime startTime;
+      	private LocalTime endTime;
       
-          public void setType(DiscountConditionType type) {
-              this.type = type;
-          }
-      
-          public int getSequence() {
-              return sequence;
-          }
-      
-          public void setSequence(int sequence) {
-              this.sequence = sequence;
-          }
-      
-          public DayOfWeek getDayOfWeek() {
-              return dayOfWeek;
-          }
-      
-          public void setDayOfWeek(DayOfWeek dayOfWeek) {
-              this.dayOfWeek = dayOfWeek;
-          }
-      
-          public LocalTime getStartTime() {
-              return startTime;
-          }
-      
-          public void setStartTime(LocalTime startTime) {
-              this.startTime = startTime;
-          }
-      
-          public LocalTime getEndTime() {
-              return endTime;
-          }
-      
-          public void setEndTime(LocalTime endTime) {
-              this.endTime = endTime;
-          }
+          // getter, setter...
       }
       ~~~
-
+    
     - 이어서 Screening 클래스도 위와 같은 방법(어떤 데이터를 포함해야하는지 결정, 캡슐화를 위한 메소드 추가)으로 구현
-
+  
       ~~~ Screening
-      public class Screening {
+    public class Screening {
           private Movie movie;
-          private int sequence;
+        private int sequence;
           private LocalDateTime whenScreening;
-      
-          public Movie getMovie() {
-              return movie;
-          }
-      
-          public void setMovie(Movie movie) {
-              this.movie = movie;
-          }
-      
-          public int getSequence() {
-              return sequence;
-          }
-      
-          public void setSequence(int sequence) {
-              this.sequence = sequence;
-          }
-      
-          public LocalDateTime getWhenScreening() {
-              return whenScreening;
-          }
-      
-          public void setWhenScreening(LocalDateTime whenScreening) {
-              this.whenScreening = whenScreening;
-          }
+    
+          // getter, setter...
       }
       ~~~
-
+      
     - 영화 예매 시스템의 목적은 영화를 예매하는 것. Reservation 클래스 추가
-
-      ~~~ Reservation
+    
+    ~~~ Reservation
       public class Reservation {
-          private Customer customer;
+        private Customer customer;
           private Screening screening;
           private Money fee;
           private int audienceCount;
@@ -296,44 +196,14 @@
               this.audienceCount = audienceCount;
           }
       
-          public Customer getCustomer() {
-              return customer;
-          }
-      
-          public void setCustomer(Customer customer) {
-              this.customer = customer;
-          }
-      
-          public Screening getScreening() {
-              return screening;
-          }
-      
-          public void setScreening(Screening screening) {
-              this.screening = screening;
-          }
-      
-          public Money getFee() {
-              return fee;
-          }
-      
-          public void setFee(Money fee) {
-              this.fee = fee;
-          }
-      
-          public int getAudienceCount() {
-              return audienceCount;
-          }
-      
-          public void setAudienceCount(int audienceCount) {
-              this.audienceCount = audienceCount;
-          }
+          // getter, setter ...
       }
-      ~~~
-
-    - 고객의 정보를 저장하는 Customer
-
+    ~~~
+      
+  - 고객의 정보를 저장하는 Customer
+  
       ~~~ Customer
-      public class Customer {
+    public class Customer {
       	private String name;
       	private String id;
       	
@@ -343,9 +213,9 @@
       	}
       }
       ~~~
-
     
-
+    
+  
 - 영화를 예매하자
 
   - ReservationAgency는 데이터 클래스들을 조합하여 영화 예매 절차를 구현하는 클래스
@@ -534,17 +404,278 @@
 
 - 캡슐화를 지켜라
   - 속성의 가시성을 private로 지정했더라도 접근자와 수정자를 통해 속성을 외부로 제공하고 있다면 캡슐화를 위반한 것
-  - 
+  
+    > ~~~ Rectangle
+    > public class Rectangle {
+    > 	private int left;
+    > 	private int right;
+    > 	private int top;
+    > 	private int bottom;
+    > 	
+    > 	public Rectangle(int left, int right, int top, int bottom) {
+    > 		
+    > 		this.left = left;
+    > 		...
+    > 	}
+    > 	
+    > 	// setter, getter...
+    > }
+    > ~~~
+    >
+    > 이 사각형 이용하여 사각형의 너비와 높이를 증가시키는 코드가 필요할 경우
+    >
+    > ~~~ AnyClass
+    > public AnyClass {
+    > 	void anyMethod(Rectangle rectangle, int multiple) {
+    > 		rectangle.setRight(rectangle.getRight * multiple);
+    > 		rectangle.setBottom(rectangle.getBottom * multiple);
+    > 		...
+    > 	}
+    > }
+    > ~~~
+    >
+    > - 코드 중복 발생할 확률 높음
+    >
+    > 만약 다른 곳에서도 이와 같은 사각형 너비와 높이를 증가시키는 코드가 필요하다면 그 곳에서도 getRight와 getBottom 메소드를 호출하여 값을 설정하는 비슷한 코드가 존재할 것임
+    >
+    > - 변경에 취약
+    >
+    > 만약 Right와 Bottom 대신 length와 height를 이용하여 수정한다고 생각해보자.
+    >
+    > 지금의 Rectangle은 int 타입의 top, bottom, left, right라는 4가지 인스턴스 변수 존재 사실을 인터페이스르 통해 외부에 노출시키게 됨
+    >
+    > 결과적으로 getter와 setter를 변경시켜야 하고, 기존 접근자 메소드를 사용하던 모든 코드에도 영향을 미치게 됨
+    >
+    > 
+    >
+    > 해결방법은 캡슐화를 강화
+    >
+    > ~~~ Rectangle
+    > class Rectangle {
+    > 	public void enlarge(int multiple) {
+    > 		right *= multiple;
+    > 		left *= multiple;
+    > 	}
+    > }
+    > ~~~
+    >
+    > 자신의 크기를 스스로 증가시키도록 책임을 이동시켜 문제를 해결
+  
+- 스스로 자신의 데이터를 책임지는 객체
+
+  - "이 객체가 어떤 데이터를 포함해야 하는가?" 라는 질문은 아래와 같이 두 개의 개별적인 질문으로 분리
+
+    > 이 객체가 어떤 데이터를 포함해야 하는가?
+    >
+    > 이 객체가 데이터에 대해 수행해야 하는 오퍼레이션은 무엇인가?
+    >
+    > 
+    >
+    > 두 질문을 조합하면 객체의 내부 상태를 저장하는 방식과 저장된 상태에 대해 호출할 수 있는 오퍼레이션의 집합을 얻을 수 있음
+    >
+    > 
+    >
+    > 위의 내용을 토대로 ReservationAgency로 새어나간 데이터에 대한 책임을 실제 데이터를 포함하고 있는 객체로 옮겨 보자 
+    >
+    > 
+    >
+    > 1. 어떤 데이터를 관리해야 하는가 (이미 앞에서 결정해 놓았지!)
+    >
+    > ~~~ 
+    > public class DiscountCondition {
+    > 	private DiscountConditionType type;
+    > 	private int sequence;
+    > 	private DayOfWeek dayOfWeek;
+    > 	private LocalTime startTime;
+    > 	private LocalTime endTime;
+    > }
+    > ~~~
+    >
+    > 2. 이 데이터에 대해 수행할 수 있는 오퍼레이션이 무엇인가
+    >
+    >    - switch(DiscountCondition)
+    >
+    >      case 순번 조건 : sequence를 이용해 할인 여부 결정
+    >
+    >      case 기간 조건 : dayOfWeek, startTime, endTime을 이용해 할인 여부 결정
+    >
+    >    - 두 할인 조건을 판단할 수 있도록 두 개의 isDiscountable이 필요
+    >
+    > ~~~ 
+    > public class DiscountCondition{
+    > 	...
+    > 	public boolean isDiscountable(DayOfWeek dayOfWeek, LocalTime time) {
+    > 		...
+    > 	}
+    > 	public boolean isDiscountable(int sequence) {
+    > 		...
+    > 	}
+    > }
+    > ~~~
+    >
+    > 
+    >
+    > 같은 방법으로 Movie를 구현한다고 하면,
+    >
+    >  Movie가 포함하는 데이터를 보면 영화 요금 계산과 할인 여부 판단 오퍼레이션이 필요 
+    >
+    > - 요금 계산을 위한 할인 정책 3가지 (금액, 비율, 미적용)
+    > - 따라서 할인 정책의 타입을 반환하는 getMovieType 메소드와 정책별 요금 계산하는 메소드 3가지 구현
+    >
+    > ~~~ Movie
+    > public class Movie {
+    > 
+    > 	private String title;
+    > 	private Duration runningTime;
+    > 	private Money fee;
+    > 	private List<DiscountCondition> discountCondition;
+    > 	
+    > 	private MovieType movieType;
+    > 	private Money discountAmount;
+    > 	private double discountPercent;
+    > 
+    > 	// DiscountCondition과 마찬가지로 할인 정책 타입 반환
+    > 	public MovieType getMovieType() {
+    > 		...
+    > 	}
+    > 	
+    > 	// 금액 할인
+    > 	public Money calulateAmountDiscountedFee() {
+    > 		...
+    > 	}
+    > 	
+    > 	// 비율 한인
+    > 	public Money calulatePercentDiscountedFee() {
+    > 		...
+    > 	}
+    > 	
+    > 	// 할인 미적용
+    > 	public Money calulateNoneDiscountedFee() {
+    > 		...
+    > 	}
+    > 	
+    > 	// Movie는 DiscountCondition의 목록도 포함 - 할인 여부 판단 오퍼레이션 포함
+    > 	public boolean isDiscountable(LocalDateTime whenScreened, int sequence) {
+    > 		...
+    > 	}
+    > }
+    > ~~~
+    >
+    > ㅇ
+    >
+    > Screening과 ReservationAgency 역시 같은 방법으로 오퍼레이션을 추가하면
+    >
+    > ~~~ Screening
+    > public class Screening {
+    > 	...
+    > 	/* mOVIE가 금액 할인이나 비율 할인 정책을 지원할 경우 Movie의 isDiscounttable 
+    > 	메소드를 호출하여 할인 가능 여부 판단 후 적절한 Movie 메소드를 호출하여 계산 */
+    > 	public Money calculateFee(int audienceCount) {
+    > 		switch(movie.getMocieType()) {
+    > 			case AMOUNT_DISCOUNT : ... 
+    > 			case PERCENT_DISCOUNT : ...
+    > 			case NONE_DISCOUNT : ...
+    > 		}
+    > 	}
+    > }
+    > ~~~
+    >
+    > ~~~ 
+    > public class ReservationAgency {
+    > 	/* Screening의 calculateFee를 호출해 예매 요금 계산 후 그 요금을 이용하여 
+    > 	Reservation 생성 */
+    > 	public Reservation reserve(Screening screening, Customer customer, int audienceCount) {
+    > 		Money fee = screening.calculateFee(audienceCount);
+    > 		
+    > 		return new Reseervation(customer, fee, audienceCount);
+    > 	}
+    > }
+    > ~~~
+
+- 결과적으로, 최소한 결합도 측면에서 ReseravationAgency에 의존성에 몰려있던 먼저의 설계보다는 개선
+
+  - 데이터를 처리하는 데 필요한 메소드를 데이터를 가지고 있는 객체 스스로 구현
+  - 객체들은 스스로를 책임짐
 
 
 
+###### 하지만 여전히 부족하다
 
+- 캡슐화 위반
 
+  > - DiscountCondition
+  >
+  >   > public boolean isDiscountable(DayOfWeek dayOfWeek, LocalTime time) { ... }
+  >   >
+  >   > - 이 메소드는 객체 내부에 DayOfWeek 타입의 요일 정보와 LocalTime 타입의 시간 정보가 인스턴스 변수로 포함돼 있다는 사실을 인터페이스를 통해 외부로 노출 !!
+  >   >
+  >   > public boolean isDiscountable(int sequence) { ... }
+  >   >
+  >   > - 마찬가지로 int 타입의 sequence의 포함을 외부에 노출
+  >   >
+  >   > public DiscountConditionType getType() { ... }
+  >   >
+  >   > - setType()은 없지만, getType()을 통해 DiscountConditionType을 포함하고 있음을 노출
+  >   >
+  >   > 
+  >   >
+  >   > DiscountCondition의 속성을 변경할 경우 isDiscountable 메소드를 사용하는 모든 클라이언트 들이 함께 수정해야 함..
+  >   >
+  >   > 내부 구현의 변경이 외부로 퍼져나가는 파급 효과는 캡슐화가 부족하다는 증거 !
+  >
+  > - Movie
+  >
+  >   > public Money calculateAmountDiscountedFee() { ... }
+  >   >
+  >   > public Money calculatePercentDiscountedFee() { ... }
+  >   >
+  >   > public Money calculateNoneDiscountedFee() { ... }
+  >   >
+  >   > - 3가지의 할인 정책의 존재를 외부에 노출 !
+  >   >
+  >   > 새로운 정책을 추가하거나 수정한다면 DiscountCondition과 마찬가지로 사용하는 모든 클라이언트들이 함께 수정해야 함
 
+- 캡슐화의 진정한 의미
 
+  - 내부 속성을 외부로부터 감추는 것은 '데이터 캡슐화'라고 불리는 캡슐화의 한 종류일 뿐
+  - 캡슐화는 변하는 어떤 것이든 감추는 것
+  - 그것이 무엇이든 구현과 관련된 것이면 모두 감춰야 함
 
+- 위 코드는 캡슐화를 위반했기 때문에 결합도는 높고 응집도는 낮다.
 
+  - Movie와 DiscountCondition 사이의 결합도
 
+    > DiscountCondition의 기간 할인조건 명칭이 PERIOD에서 다른 값으로 변경 시 Movie 수정
+    >
+    > DiscountCondition의 종류가 추가 삭제 된다면 Movie 안의 if ~ else문 수정
+    >
+    > 각 DiscountCondition의 만족 여부 판단하는데 필요한 정보 변경 시, Movie의 isDiscountable 메소드로 전달된 파라미터 변경해야 함. 결과적으로 이 메소드에 의존하는 Screening마저 변경 초래
+
+###### 데이터 중심 설계의 문제점
+
+- 이유
+
+  - 데이터 중심 설계는 본질적으로 너무 이른 시기에 데이터에 관해 결정하도록 강요
+  - 데이터 중심의 설계에서는 협력이라는 문맥을 고려하지 않고 객체를 고립시킨 채 오퍼레이션을 결정
+
+  
+
+- 데이터 중심 설계는 객체의 행동보다는 상태에 초점을 맞춤
+
+  - 데이터와 기능을 분리하는 절차적 프로그래밍 방식은 객체지향 패러다임에 반하는 것
+  - 너무 이른 시기에 데이터에 대해 고민하기 때문에 캡슐화에 실패
+  - 객체의 내부 구현이 객체의 인터페이스를 어지럽히고 객체의 응집도와 결합도에 악영향을 미치기 때문에 변경에 취약한 코드 유발
+
+  
+
+- 데이터 중심 설계는 객체를 고립시킨 채 오퍼레이션을 정의하도록 만든다
+
+  - 데이터 중심 설계에서 초점은 객체의 외부가 아니라 내부로 향함
+  - 객체 구현이 이미 결정된 상태에서 다른 객체와의 협력 방법을 고민하기 때문에 이미 구현된 객체의 인터페이스를 억지로 맞출 수 밖에 없음
+
+  
+
+- 두 번째 설계는 객체의 인터페이스에 구현이 노출돼 있기 때문에 협력이 구현 세부사항에 종속돼 있고, 그에 따라 객체의 내부 구현이 변경됐을 때 협력하는 객체 모두가 영향을 받을 수 밖에 없음
 
 
 
