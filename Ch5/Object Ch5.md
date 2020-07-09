@@ -145,3 +145,156 @@
     >
     > 따라서 Screening을 Reservation의 CREATOR로 선택하는 것이 적절
 
+###### 구현을 통한 검증
+
+- Screening
+
+  ~~~ Screening
+  public class Screening {
+  	// movie에게 메시지를 보내기 위해 movie에 대한 참조 포함
+  	private Movie movie;
+  	private int sequence;
+  	private LocalDateTime whenScreened;
+  	
+  	// 협력 관점에서 '예매하라'라는 메시지에 응답할 수 있어야 함
+  	public Reservation reserve (Customer customer, int audienceCount) {
+  		return new Reservation(customer, this, calculateFee(audienceCount), audienceCount);
+  
+  	}
+  	
+  	// 예매를 위한 가격을 계산하기 위해 movie에게 '가격을 계산하라'라는 메시지를 전송
+  	// Movie에 대한 내부 구현을 고려하지 않고 필요한 메시지를 결정 -> Movie 내부 구현 캡슐화
+  	private Money calculateFee(int audienceCount) {
+  		return movie.calculateFee(this).times(audienceCount);
+  	}
+  }
+  ~~~
+
+  - Screening과 Movie의 유일한 연결 고리는 메시지 뿐 
+
+    -> 메시지가 변경되지 않는 한 Moive에 어떤 수정을 가하더라도 Screening에는 영향 x
+
+    이처럼 메시지 기반 협력을 구성하면 결합도를 느슨하게 유지 가능
+
+- Movie
+
+  ~~~ Movie
+  public class Movie {
+  	/* 요금 계산을 위해 fee, discountConditions, 할인 정책 등의 정보 필요
+  	현재 설계에서 할인 정책을 Movie의 일부로 구현 -> 할인 금액, 할인 정책을 Movie의 인스턴스로 선언*/
+  	private String title;
+  	private Duration runningTime;
+  	private Money fee;
+  	private List<DiscountCondition> discountConditions;
+  	
+  	private MovieType movieType;
+  	private Money discountAmount;
+  	private double discountPercent;
+  	
+  	//Screening에서 보내는 메시지에 응답하기 위한 메소드
+  	public Money calculateFee(Screening screening) {
+  		if(isDiscountable(Screening screening)) {
+  			return fee.minus(calculateDiscountAmount());
+  		}
+  		
+  		return fee;
+  	}
+  	
+  	// discountConditions 원소를 차례로 순회하면서 DiscountCondition 인스턴스를 isSatisfiedBy 메시지를 전송해서 할인 여부 판단하도록 요청
+  	private boolean isDiscountable(Screening screening) {
+  		return discountConditions.stream()
+  			.anyMatch(condition -> condition.isSatisfiedBy(Screening));
+  	}
+  	
+  	// Movie 타입에 따라 적절한 메소드 호출
+  	private Money calculateDiscountAmount() {
+  		switch(movieType) {
+  			case AMOUNT_DISCOUNT : return calculateAmountDiscountAmount();
+  			case PERCENT_DISCOUNT : return calculatePercentDiscountAmount();
+  			case NONE_DISCOUNT : return calculateNoneDiscountAmount();
+  		}
+  		throw new IllegalStateException();
+  	}
+  	
+  	private Money calculateAmountDiscountAmount() {...}
+  	private Money calculatePercentDiscountAmount() {...}
+  	private Money calculatenoneDiscountAmount() {...}
+  	
+  }
+  ~~~
+
+  - Stream
+
+    > allMatch() : 모든 요소들이 매개값으로 주어진 조건을 만족하는지 조사
+    >
+    > anyMatch() : 최소한 한 개의 요소가 주어진 조건에 만족하는지 조사
+    >
+    > noneMatch() : 모든 요소들이 주어진 조건을 만족하지 않는지 조사
+    >
+    > ~~~ 예제
+    > public static void main(String[] args){
+    >         int[] intArr = {2, 4, 6};
+    > 
+    >         boolean result = Arrays.stream(intArr)
+    >                 .allMatch(a -> a%2 == 0);
+    >         System.out.println("2의 배수? " + result);
+    > 
+    >         result = Arrays.stream(intArr)
+    >                 .anyMatch(a -> a%3 == 0);
+    >         System.out.println("3의 배수가 하나라도 있나? " + result);
+    > 
+    >         result = Arrays.stream(intArr)
+    >                 .noneMatch(a -> a%3 == 0);
+    >         System.out.println("3의 배수가 없나? " + result);
+    > } // true, true, false
+    > ~~~
+
+- DiscountCondition
+
+  ~~~ DiscountCondition
+  public class DiscountCondition {
+  
+  	//할인 조건을 판단하기 위해 Screening의 상영 시간과 상영 순번이 필요
+  	private int sequence;
+  	private DayOFWeek dayOfWeek;
+  	private LocalTime startTime;
+  	private LocalTime endTime;
+  
+  	// Movie의 '할인 여부를 판단하라'라는 메시지에 응답하는 메소드
+  	public boolean isSatisfiedBy(Screening screening) {
+  		if(type == DiscountConditionType.PERIOD)
+  			return ...;
+  	}
+  	
+  	private boolean isSatisfiedByPeriod(Screening screeing) {
+  		return dayOfWeek.equals() ... ;
+  	}
+  	
+  	private boolean isSatisfiedBySequence(Screening screeing) {
+  		return sequence == screening.getSequence;
+  	}
+  }
+  ~~~
+
+- DiscountCondition 개선하기 
+
+  > DiscountCondition이 변경되는 경우
+  >
+  > - 새로운 할인 조건 추가
+  >
+  >   - isSatisfiedBy 메소드 안의 if ~ else 구문 수정
+  >
+  >   - 새로운 할인 조건이 새로운 데이터를 요구한다면 속성 추가 작업 역시 필요
+  >
+  > - 순번 조건을 판단하는 로직 변경
+  >
+  >   - isSatisfiedBySequence 메소드 내부 구현 수정
+  >   - 순번 조건을 판단하는데 필요한 데이터 변경 -> sequnce 속성 역시 변경
+  >
+  > - 기간 조건을 판단하는 로직 변경
+  >
+  >   - isSatisfiedByPeriod 메소드 내부 구현 수정
+  >   - 기간 조건을 판단하는데 필요한 데이터 변경 -> dayOfWeek, startTime, endTime 속성 역시 변경
+  >
+  > -> 변경에 취약한 코드!! 따라서 낮은 응집도가 초래하는 문제를 해결하기 위해 변경의 이유에 따라 클래스를 분리해야 함
+
