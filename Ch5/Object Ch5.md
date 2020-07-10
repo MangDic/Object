@@ -276,25 +276,242 @@
   }
   ~~~
 
-- DiscountCondition 개선하기 
+  
 
-  > DiscountCondition이 변경되는 경우
+###### DiscountCondition 개선하기
+
+> DiscountCondition이 변경되는 경우
+>
+> - 새로운 할인 조건 추가
+>
+>   - isSatisfiedBy 메소드 안의 if ~ else 구문 수정
+>
+>   - 새로운 할인 조건이 새로운 데이터를 요구한다면 속성 추가 작업 역시 필요
+>
+> - 순번 조건을 판단하는 로직 변경
+>
+>   - isSatisfiedBySequence 메소드 내부 구현 수정
+>   - 순번 조건을 판단하는데 필요한 데이터 변경 -> sequnce 속성 역시 변경
+>
+> - 기간 조건을 판단하는 로직 변경
+>
+>   - isSatisfiedByPeriod 메소드 내부 구현 수정
+>   - 기간 조건을 판단하는데 필요한 데이터 변경 -> dayOfWeek, startTime, endTime 속성 역시 변경
+>
+> -> 변경에 취약한 코드!! 따라서 낮은 응집도가 초래하는 문제를 해결하기 위해 변경의 이유에 따라 클래스를 분리해야 함
+
+- 코드를 통해 변경의 이유 파악하기
+
+  > 1. 인스턴스 변수가 초기화되는 시점 찾아보기
   >
-  > - 새로운 할인 조건 추가
+  > - 응집도 높은 클래스는 인스턴스를 생성할 때 모든 속성을 함께 초기화
   >
-  >   - isSatisfiedBy 메소드 안의 if ~ else 구문 수정
+  > - 반면 응집도가 낮은 클래스는 객체의 속성 중 일부만 초기화하고 일부는 초기화되지 않은 상태로 남겨짐
   >
-  >   - 새로운 할인 조건이 새로운 데이터를 요구한다면 속성 추가 작업 역시 필요
+  >   > 순번 조건을 표현하는 경우 sequence만 초기화
+  >   >
+  >   > 기간 조건을 표현하는 경우 dayOfWeek, startTime, endTime만 초기화
+  >   >
+  >   > 이처럼 클래스 속성이 서로 다른 시점에 초기화되거나 일부만 초기화된다는 것은 응집도가 낮은 것
+  >   >
+  >   > 함께 초기화되는 속성을 기준으로 코드를 분리해야 함!!
   >
-  > - 순번 조건을 판단하는 로직 변경
+  > 2. 메소드들이 인스턴스 변수를 사용하는 방식을 살펴포기
   >
-  >   - isSatisfiedBySequence 메소드 내부 구현 수정
-  >   - 순번 조건을 판단하는데 필요한 데이터 변경 -> sequnce 속성 역시 변경
+  > - 모든 메소드가 객체의 모든 속성을 사용한다면 클래스의 응집도가 높은 것
   >
-  > - 기간 조건을 판단하는 로직 변경
+  > - 반면 메소드들이 사용하는 속성에 따라 그룹이 나뉜다면 클래스의 응집도가 낮은 것
   >
-  >   - isSatisfiedByPeriod 메소드 내부 구현 수정
-  >   - 기간 조건을 판단하는데 필요한 데이터 변경 -> dayOfWeek, startTime, endTime 속성 역시 변경
-  >
-  > -> 변경에 취약한 코드!! 따라서 낮은 응집도가 초래하는 문제를 해결하기 위해 변경의 이유에 따라 클래스를 분리해야 함
+  >   > isSatisfiedBySequence 메소드는 sequence를 사용하지만 dayOfWeek, startTime, endTime는 사용 x
+  >   >
+  >   > isSatisfiedByPeriod 메소드는 dayOfWeek, startTime, endTime를 사용하지만 sequence 사용 x
+  >   >
+  >   > 속성 그룹과 해당 그룹에 접근하는 메소드 그룹을 기준으로 코드를 분리해야 함 !!
+
+- 클래스 응집도 판단
+
+  - 클래스가 하나 이상의 이유로 변경돼야 한다면 응집도가 낮은 것 -> 변경의 이유 기준으로 클래스 분리
+  - 클래스의 인스턴스를 초기화하는 시점에, 경우에 따라 서로 다른 속성들을 초기화하고 있다면 응집도가 낮은 것 -> 초기화되는 속성의 그룹을 기준으로 클래스 분리
+  - 메소드 그룹이 속성 그룹을 사용하는지 여부로 나뉜다면 응집도가 낮은 것
+  - DiscountCondition 에는 이 세 가지 징후 모두 포함 -> 응집도가 낮음
+
+- 타입 분리하기
+
+  - DiscountCondition의 가장 큰 문제는 순번 조건과 기간 조건이라는 두 개의 독립적인 클래스가 공존하는 것
+
+    > 두 개의 클래스를 분리하면,
+    >
+    > ~~~ PeriodCondition
+    > public class PeriodCondition {
+    > 
+    > 	private DayOfWeek dayOfWeek;
+    > 	private LocalTime startTime;
+    > 	private LocalTime endTime;
+    > 	
+    > 	...
+    > }
+    > ~~~
+    >
+    > ~~~ sequece
+    > public class SequenceCondition {
+    > 	
+    > 	private int sequence;
+    > 	
+    > 	...
+    > }
+    > ~~~
+    >
+    > - 두 클래스는 자신의 모든 인스턴스 변수를 함께 초기화 가능
+    > - 클래스에 있는 모든 메소드는 동일한 인스턴스 변수 그룹 사용
+
+  - 하지만 Movie의 인스턴스와 분리된 두 클래스의 인스턴스 모두 협력할 수 있어야 함
+
+    - 해결을 위해 Movie 클래스 안에서 두 클래스의 목록을 따로 유지
+
+      -> Movie 클래스가 두 클래스 모두에 결합. 원래는 1개의 클래스에 결합되었으므로 결합도가 높아짐
+
+      -> 수정 후 새로운 할인 조건 추가하기 어려워짐
+
+      > 먼저 새로운 할인 조건을 담을 List를 Movie의 인스턴스 변수로 추가해야 함
+      >
+      > 또, 조건 만족여부를 판단하는 메소드도 추가
+      >
+      > 마지막으로 이 메소드를 호출하도록 isDiscountable 메소드 수정
+      >
+      > -
+      >
+      > 분리 전에는 DiscountCondition 내부 구현만 수정하면 Movie에는 아무런 영향 미치지 않았음
+      >
+      > 수정 후에는 할인 조건 추가시 Movie도 함께 수정
+
+- 다형성을 통해 분리하기
+
+  - Movie의 입장에서는 어떤 할인 조건이든 할인 가능 여부만 반환해 주면 됨
+
+  - 앞에서 배웠던 역할의 개념이 새록새록 등장
+
+  - DiscountCondition이라는 슬롯에 두 클래스를 넣으면 Movie는 구체적인 클래스는 알지 못함
+
+    -> 오직 역할에 대해서만 결합되도록 의존성을 제한
+
+  - 역할을 구현하기 위해 추상 클래스나 인터페이스 사용
+
+    -> 구현 공유 필요 없이 역할을 대체하는 객체들의 책임만 정의하고 싶다면 인터페이스 사용
+
+  ~~~ DiscountCondition
+  // 할인 조건의 경우에는 두 클래스가 구현을 공유할 필요 없으므로 인터페이스를 통해 역할 구현 !
+  public interface DiscountCondition {
+  	boolean isSatisfiedBy(Screening screening);
+  }
+  ~~~
+
+  ~~~ condition
+  public class PeriodCondition implements DiscountCondition {...}
+  
+  public class SequenceCondition implements DiscountCondition {...}
+  ~~~
+
+  ~~~ Movie
+  public class Movie {
+  	
+  	private List<DiscountCondition> discountConditions;
+  	...
+  	// 협력하는 구체적인 타입 상관 없이 DiscountCondition 역할을 수행할 수 있고 isSatisfiedBy 메시지를 이해할 수만 있다는 사실만 알고있으면 됨
+  	private boolean isDiscountable(Screening screening) {
+  		return discountConditionstream().anyMatch(condition 
+  			-> condition.isSatisfiedBy(screening));
+  	}
+  	
+  }
+  ~~~
+
+  메시지를 수신한 객체에 따라 실행되는 메소드가 다름 
+
+  -> Movie와 DiscountCondition 사이의 협력은 다형적!!
+
+  - POLYMORPHISM(다형성) 패턴
+
+    -> 객체의 타입에 따라 변하는 행동이 있다면 타입을 분리하고 변화하는 행동을 각 타입의 책임으로 할당
+
+    
+
+- 변경으로부터 보호하기
+
+  - DiscountCondition의 두 서브클래스는 서로 다른 이유로 변경됨
+
+    - SequenceCondition은 순번 조건의 구현 방법이 변경될 경우에만 수정
+    - PeriodCondition은 기간 조건의 구현 방법이 변경될 경우에만 수정
+
+    -> 두 개의 서로 다른 변경이 두개의 서로 다른 클래스 안으로 캡슐화
+
+  - DiscountCondition 역할이 Movie로 부터 두 서브클래스를 감춤
+
+    - 새로운 할인 조건이 추가되더라도 Movie에는 영향을 주지 않음을 의미
+    - 오직 DiscountCondition 인터페이스를 실체화하는 클래슬를 추가하는 것으로 종류 확장 가능
+
+  - PROTECTED VARIATIONS(변경 보호) 패턴
+
+    - 변경을 캡슐화하도록 책임을 할당
+    - 설계에서 변하는 것이 무엇인지 고려하고 변하는 개념을 캡슐화
+
+  - 하나의 클래스가 여러 타입의 행동을 구현하고 있다면 클래스를 분해하고 다형성 패턴으로 책임 분리
+
+  - 예측 가능한 변경으로 인해 여러 클래스들이 불안정해진다면 변경 보호 패턴으로 안정적인 인터페이스 뒤로 캡슐화
+
+  
+
+- Movie 클래스 개선하기
+
+  - 금액 할인 정책 영화 과 비율 할인 정책 영화라는 두 가지 타입을 하나의 클래스에 구현
+
+    -> 하나 이상 이유로 변경 가능으로 응집도가 낮음
+
+  - DiscountCondition과 마찬가지로 다형적으로 분리하자
+
+    ~~~ Movie
+    // DiscountCondition은 역할을 수행할 클래스들 사이에 구현을 공유할 필요가 없었기에 인터페이스 
+      사용. Movie는 구현을 공유할 필요 없으므로 추상 클래스 사용
+    public abstract class Movie {
+    	...
+    	abstract protected Money calculateDiscountAmount();
+    }
+    ~~~
+
+    ~~~ java
+    public class AmountDiscountMovie extends Movie {
+        
+        private Money discountAmount;
+        
+        public AmountDiscountMovie(...) {
+            ...
+        }
+        
+        @Override
+        protected Money calculateDiscountAmount() {
+            return discountAmount;
+        }
+    }
+    ~~~
+
+    ~~~java
+    public class PercentDiscountMovie extends Movie {
+        
+        private double percent;
+        
+        public PercentDiscountMovie(...) {
+            ...
+        }
+        
+        @Override
+        protected Money calculateDiscountAmount() {
+            return getFee().times(percent);
+        }
+        
+        
+    }
+    ~~~
+
+    
+
+  
 
