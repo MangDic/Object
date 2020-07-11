@@ -149,7 +149,7 @@
 
 - Screening
 
-  ~~~ Screening
+  ~~~ java
   public class Screening {
   	// movie에게 메시지를 보내기 위해 movie에 대한 참조 포함
   	private Movie movie;
@@ -178,7 +178,7 @@
 
 - Movie
 
-  ~~~ Movie
+  ~~~ java
   public class Movie {
   	/* 요금 계산을 위해 fee, discountConditions, 할인 정책 등의 정보 필요
   	현재 설계에서 할인 정책을 Movie의 일부로 구현 -> 할인 금액, 할인 정책을 Movie의 인스턴스로 선언*/
@@ -231,7 +231,7 @@
     >
     > noneMatch() : 모든 요소들이 주어진 조건을 만족하지 않는지 조사
     >
-    > ~~~ 예제
+    > ~~~ java
     > public static void main(String[] args){
     >         int[] intArr = {2, 4, 6};
     > 
@@ -251,7 +251,7 @@
 
 - DiscountCondition
 
-  ~~~ DiscountCondition
+  ~~~ java
   public class DiscountCondition {
   
   	//할인 조건을 판단하기 위해 Screening의 상영 시간과 상영 순번이 필요
@@ -341,7 +341,7 @@
 
     > 두 개의 클래스를 분리하면,
     >
-    > ~~~ PeriodCondition
+    > ~~~ java
     > public class PeriodCondition {
     > 
     > 	private DayOfWeek dayOfWeek;
@@ -352,7 +352,7 @@
     > }
     > ~~~
     >
-    > ~~~ sequece
+    > ~~~ java
     > public class SequenceCondition {
     > 	
     > 	private int sequence;
@@ -398,20 +398,20 @@
 
     -> 구현 공유 필요 없이 역할을 대체하는 객체들의 책임만 정의하고 싶다면 인터페이스 사용
 
-  ~~~ DiscountCondition
+  ~~~ java
   // 할인 조건의 경우에는 두 클래스가 구현을 공유할 필요 없으므로 인터페이스를 통해 역할 구현 !
   public interface DiscountCondition {
   	boolean isSatisfiedBy(Screening screening);
   }
   ~~~
 
-  ~~~ condition
+  ~~~ java
   public class PeriodCondition implements DiscountCondition {...}
   
   public class SequenceCondition implements DiscountCondition {...}
   ~~~
 
-  ~~~ Movie
+  ~~~ java
   public class Movie {
   	
   	private List<DiscountCondition> discountConditions;
@@ -500,18 +500,184 @@
         
         public PercentDiscountMovie(...) {
             ...
+            super(tutle, runningTime, discountConditions);
+            this.percent = percent;
+        }
+        
+        @Override
+        protected Money calculateDiscountAmount(...) {
+    		return getFee().times(percent);
+        }
+    }
+    ~~~
+
+    ~~~java
+    public abstract class Movie {
+        protected Money getFee() {
+            return fee;
+        }
+    }
+    ~~~
+
+    ~~~ java
+    public class NoneDiscountCondition extends Movie {
+        public NoneDiscountCondition(...) {
+            ...
         }
         
         @Override
         protected Money calculateDiscountAmount() {
-            return getFee().times(percent);
+            return Money.ZERO;
+        }
+    }
+    ~~~
+
+    - 도메인의 구조가 코드의 구조를 이끈다
+
+      > 변경 역시 도메인 모델의 일부
+      >
+      > 도메인 모델에는 도메인 안에서 변하는 개념과 이들 사이의 관계가 투영돼야 함
+
+  
+
+- 변경과 유연성
+
+  - 변경에 대비하는 방법
+
+    - 코드를 이해하고 수정하기 쉽도록 최대한 단순하게 설계
+    - 코드를 수정하지 않고도 변경을 수용할 수 있도록 코드를 더 유연하게 만드는 것
+
+  - 영화에 설정된 할인 정책을 실행 중에 변경할 수 있어야 한다는 요구사항이 추가된다면..
+
+    > 할인 정책을 구현하기 위해 상속을 사용하고 있으므로 실행중에 영화 할인 정책을 변경하기 위해서는 새로운 인스턴스를 생성 후 필요한 정보를 복사해야 함
+    >
+    > 새로운 할인 정책이 추가될 때마다 인스턴스를 생성, 상태 복사, 식별자 관리하는 코드를 추가하는 일은 번거롭고 오류가 발생하기 쉬움
+
+  - 해결 방법은 합성을 사용하는 것 !
+
+    - Movie의 상속 계층 안에 구현된 할인 정책을 독립적인 DiscountPolicy로 분리한 후 Movie에 합성
+
+    ~~~ java
+    Movie movie = new Movie("타이타닉",
+                           Duration.ofMinutes(120),
+                           Money.wons(10000),
+                           new AmountDiscountPolicy(...));
+    movie.changeDiscountPolicy(new PercentDiscountPolicy(...));
+    // 새로운 할인 정책이 추가되더라도 할인 정책을 변경하는 데 필요한 추가적인 코드 작성 필요 x
+    // 새로운 클래스를 추가하고 클래스의 인스턴스를 Movie의 changeDiscountPolicy 메소드에 전달
+    ~~~
+
+  
+
+###### 책임 주도 설계의 대안
+
+- 리펙토링 : 이해하기 쉽고 수정하기 쉬운 SW로 개선하기 위해 겉으로 보이는 동작은 바꾸지 않은 채 내부 구조를 변경하는 것
+
+- 메소드 응집도
+
+  - 데이터 중심으로 설계된 영화 예매 시스템에서 영화 예매를 처리하는 모든 절차는 ReservationAgency에 집중돼 있음. 
+
+  - 여기에 포함된 로직들을 적절한 객체의 책임으로 분배하면 책임 주도 설계와 거의 유사한 결과를 얻을 수 있음
+
+  - Monster Method(긴 메소드)
+
+    > 어떤 일을 수행하는지 바로 파악하기 어렵기 때문에 코드를 전체적으로 이해하는데 오랜 시간 필요
+    >
+    > 하나의 메소드 안에서 너무 많은 작업을 처리하기 때문에 변경이 필요할 때 수정할 부분 찾기 어려움
+    >
+    > 메소드 내부의 일부 로직만 수정하더라도 메소드 나머지 부분에서 버그 발생 확률 높음
+    >
+    > 로직의 일부만 재사용하는 것이 불가능
+    >
+    > 코드를 재사용하는 유일한 방법은 원하는 코드를 복붙 -> 코드 중복 초래
+
+  - ReservationAgency 분해하기
+
+    ~~~ java
+    // 클래스의 길이는 길어졌지만, 일반적으로 명확성의 가치가 클래스의 길이보다 중요
+    public class ReservationAgency {
+        public Reservation reserve(...) {...}
+        
+        private boolean checkDiscountable(...) {...}
+        
+        private boolean isDiscountable(...) {...}
+        
+        private boolean isSatisfiedByPeriod(...) {...}   
+        
+        private boolean isSatisfideBySequence(...) {...}
+        
+        private Money calculateFee(...) {...}
+        
+        private Money calculateDiscountedFee() {...}
+        
+        private Money calculateAmountDiscountedFee(...) {...}
+        
+        private Money calculatePercentDiscountedFee(...) {...}
+        
+        private Money calculateNoneDiscountedFee(...) {...}
+        
+        private Reservation createReservation(...) {...}
+    }
+    ~~~
+
+    ~~~java
+    // 수정 후 메소드가 어떤 일을 하는지 한번에 알아볼 수 있다 !!
+    public Reservation reserve() {
+        
+        boolean discountable = checkDiscountable(screening);
+        Money fee = calculateFee(...);
+        return createReservation(...);
+    }
+    ~~~
+
+    - 메소드들의 응집도 자체는 높아졌지만, 이 메소드들을 담고 있는 ReservationAgency의 응집도는 여전히 낮음
+
+- 객체를 자율적으로 만들자
+
+  - 자신이 소유하고 있는 데이터를 자기 스스로 처리하도록 만들 것
+
+  - isDiscountable과 isSatisfiedBySequence, isSatisfiedByPeriod는 DiscountCondition의 접근자 메소드를 이용하여 데이터를 가져옴
+
+  - 메소드들을 데이터가 존재하는 DiscountCondition으로 이동하고 ReservationAgency에서 삭제
+
+    ~~~ java
+    public class DiscountCondition {
+        
+        ...
+        
+        // 외부에서 호출이 가능해야 하므로 가시성을 private에서 public으로 변경
+        // 이동 전에는 구현의 일부였지만, 이동 후 퍼블릭 인터페이스의 일부가 됨
+        // 기존에는 DiscountCondition 인스턴스를 인자로 받아야 했지만 이젠 그럴 필요가 없어짐
+        public boolean isDiscountable(...) {
+            if(type == DiscountConditionType.PERIOD) {...}
+            return isSatisfiedBySequence(screening);
         }
         
+        private boolean isSatisfiedByPeriod(...) {...}
         
+        private boolean isSatisfiedBySequence(...) {...}
+    }
+    ~~~
+
+    ~~~java
+    public class ReservationAgency {
+        private boolean checkDiscountable(...) {
+            return screening.getMovie().getDiscountConditions().stream()
+                .anyMatch(condition -> condition.isDiscountable(screenting));
+        }
     }
     ~~~
 
     
 
-  
+    - DiscountCondition 내부에서만 DiscountCondition 인스턴스 변수에 접근
+    - 따라서 DiscountCondition에서 모든 접근자 메소드 제거 가능
+    - 내부구현을 캡슐화 가능하며, 할인 조건을 계산하는 모든 로직이 모여있기 때문에 응집도가 높아짐
+    - ReservationAgency는 내부 구현을 노출하는 접근자 메소드 사용없이 메시지를 통해서만 DiscountCondtion과 협력 -> 낮은 결합도 유지
+
+  - 작성한 코드에 다형성, 변경 보호 패턴을 차례로 적용하면 최종 설계와 유사한 코드를 얻게 됨
+
+  - 책임 주도 설계에 익숙하지 않다면 이처럼 일단 데이터 중심으로 구현 후 리팩토링해도 상관 없음
+
+
 
