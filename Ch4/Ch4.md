@@ -43,7 +43,7 @@
   >   >
   >   > 객체를 협력하는 공동체의 일원으로 바라봄
   >   >
-  >   > 객체의 책임은 인터페이스에 속함. 객체는 책임을 드러내는 안정적인 인터페이스 뒤로 책임을 수행하는 데 필요한 상태를 캡슐화함으로써 구현 변경에 대한 파장이 외부로 퍼져나가는 것을 방지
+  >   > 객체의 책임은 인터페이스에 속함. 객체는 책임을 드러내는 안정적인 인터페이스 뒤로 책임을 수행하는 데 필요한 상태를 캡슐화함으로써 구현 변경에 대한 파장이 외부로 퍼져나가는 것을 방지 
   >   >
   >   > 따라서 책임에 초점을 맞추면 상대적으로 변경에 안정적인 설계를 얻을 수 있음
   >   
@@ -57,7 +57,7 @@
 
   - 먼저 Movie에 저장될 데이터를 결정하는 것으로 설계 시작
 
-    > ~~~ Movie
+    > ~~~ java
     > public class Movie {
     > 	private String title;
     > 	private Duration runningTime;
@@ -78,7 +78,7 @@
     >
     > 할인 정책은 영화별로 오직 하나만 지정 가능. 여기서 할인 정책의 종류를 결정하는 것이 바로 movieType
     >
-    > ~~~ movieType
+    > ~~~ java
     > public enum MovieType {
     > 	AMOUNT_DISCOUNT,
     > 	PERCENT_DISCOUNT,
@@ -100,7 +100,7 @@
 
   - 필요한 데이터를 준비했으면 접근자와 수정자를 이용하여 객체지향의 중요한 원칙인 캡슐화를 진행
 
-    > ~~~ Movie
+    > ~~~ java
     > public class Movie {
     >    
     >    	private String title;
@@ -132,7 +132,7 @@
   
       먼저 현재의 할인 조건의 종류를 저장할 데이터(DiscountConditionType) 필요
   
-      ~~~ DiscountConditionType
+      ~~~ java
       public enum DiscountConditionType {
       	SEQUENCE,	// 순번 조건
       	PERIOD		// 기간 조건
@@ -141,7 +141,7 @@
   
     - 할인 조건을 구현하는 DiscountCondition은 할인 조건의 타입을 저장할 인스턴스 변수인 type 포함
   
-      ~~~ DiscountCondition
+      ~~~ java
       public class DiscountCondition {
       	private DiscountConditionType type;
       	
@@ -157,7 +157,7 @@
   
     - 마찬가지로 캡슐화를 위해 메소드 추가
   
-      ~~~ DiscountCondition
+      ~~~ java
       public class DiscountCondition {
       
       	private DayOfWeek dayOfWeek;
@@ -170,7 +170,7 @@
     
     - 이어서 Screening 클래스도 위와 같은 방법(어떤 데이터를 포함해야하는지 결정, 캡슐화를 위한 메소드 추가)으로 구현
   
-      ~~~ Screening
+      ~~~ java
     public class Screening {
           private Movie movie;
         private int sequence;
@@ -182,7 +182,7 @@
       
     - 영화 예매 시스템의 목적은 영화를 예매하는 것. Reservation 클래스 추가
     
-    ~~~ Reservation
+    ~~~ java
       public class Reservation {
         private Customer customer;
           private Screening screening;
@@ -199,10 +199,10 @@
           // getter, setter ...
       }
     ~~~
-      
+    
   - 고객의 정보를 저장하는 Customer
   
-      ~~~ Customer
+      ~~~ java
     public class Customer {
       	private String name;
       	private String id;
@@ -212,7 +212,7 @@
       		this.id = id;
       	}
       }
-      ~~~
+    ~~~
     
     
   
@@ -231,7 +231,7 @@
 
 ###### 설계 트레이드 오프
 
-- 데이터 중심 설계와 책임 중심 설계의 장단점을 비교하기 위해 캡슐화, 응집도, 결합도 사용
+- 데이터 중심 설계와 책임 중심 설계의 품질을 비교하기 위해 캡슐화, 응집도, 결합도 사용
 
 - 캡슐화
 
@@ -265,21 +265,20 @@
     >
     > 
     >
-    > 응집도가 높을수록 변경의 대상과 법위가 명확해지기 때문에 코드 변경 쉬움
+    > 응집도가 높을수록 변경의 대상과 범위가 명확해지기 때문에 코드 변경 쉬움
     >
     > 변경을 반영하기 위해 오직 하나의 모듈만 수정하면 된다.
     >
-    > 퍼블릭 인터페이스를 수정했을 대만 다른 모듈에 영향을 미치는 경우에는 결합도가 낮다고 함
-
-  - 결합도
-
-    > 의존성의 정도를 나타내며, 다른 모듈에 대해 얼마나 많은 지식을 갖고 있는지 나타냄
+    
+- 결합도
+  
+  > 의존성의 정도를 나타내며, 다른 모듈에 대해 얼마나 많은 지식을 갖고 있는지 나타냄
     >
     > 어떤 모듈이 다른 모듈에 대해 너무 자세한 부분까지 알고 있다면 두 모듈은 높은 결합도를 가짐
     >
     > 객체지향의 관점에서 결합도는 객체 또는 클래스가 협력에 필요한 적절한 수준의 관계만을 유지하는지를 나타냄
     >
-    > 
+    > 퍼블릭 인터페이스를 수정했을 때만 다른 모듈에 영향을 미치는 경우에는 결합도가 낮다고 함
     >
     > 한 모듈이 변경되기 위해서 다른 모듈의 변경을 요구하는 정도
     >
@@ -290,17 +289,17 @@
     > 
     >
     > 반면 직접 작성한 코드의 경우에는 코드내 버그가 존재할 수 있고 갑자기 요구사항이 변경될 수 있기 때문에 낮은 결합도를 유지하려고 노력해야 함
-
-  - Good Application
-
-    - app을 구성하는 각 요소의 응집도가 높고 서로 느슨하게 결합돼 있음
+  
+- Good Application
+  
+  - app을 구성하는 각 요소의 응집도가 높고 서로 느슨하게 결합돼 있음
     - 이러한 설계를 추구하는 것이 설계를 변경하기 쉽게 만든다.
     - 변경의 관점에서 응집도란 변경이 발생할 때 모듈 내부에서 발생하는 변경의 정도로 측정
     - 하나의 변경을 수용하기 위해 모든 모듈이 변경된다면 응집도가 높은 것..? 결합도가 높은게 아니라?
     - 하나의 변경에 대해 하나의 모듈만 변경된다면 응집도가 높은 것
-    - 캡슐화를 위반하면 모듈 안의 응집도는 낮아지고 묘듈 사이의 결합도는 높아짐
-
-    
+    - 캡슐화를 위반하면 모듈 안의 응집도는 낮아지고 모듈 사이의 결합도는 높아짐
+  
+  
 
 ###### 데이터 중심의 영화 예매 시스템의 문제점
 
@@ -314,6 +313,7 @@
 
 - 캡슐화 위반 !
 
+  > 	```java
   > 	public class Movie {
   > 		private Money fee;
   > 		
@@ -325,18 +325,19 @@
   > 			this.fee = fee;
   > 		}
   > 	}
+  > 	```
   >
-  > 코드를 보면 직접 객체에 접근할 수 없기 때문에 캡슐화의 원칙을 지킨 것처럼 보임
+  > 	코드를 보면 직접 객체에 접근할 수 없기 때문에 캡슐화의 원칙을 지킨 것처럼 보임
   >
-  > 하지만 접근자와 수정자 메소드는 객체 내부의 상태에 대한 어떤 정보도 캡슐화하지 못함
+  > 	하지만 접근자와 수정자 메소드는 객체 내부의 상태에 대한 어떤 정보도 캡슐화하지 못함
   >
-  > fetFee()와 setFee()는 Movie 내부에 Money 타입의 fee라는 이름의 인스턴스 변수가 존재한다는 사실을 퍼블릭 인터페이스에 노골적으로 드러냄
+  > 	fetFee()와 setFee()는 Movie 내부에 Money 타입의 fee라는 이름의 인스턴스 변수가 존재한다는 사실을 퍼블릭 인터페이스에 노골적으로 드러냄
   >
-  > 책임이 아닌 저장할 데이터에 초점을 맞췄기 때문
+  > 	책임이 아닌 저장할 데이터에 초점을 맞췄기 때문
   >
-  > - 추측에 의한 설계(design-by-guessing strategy)
-  >   - 객체가 사용될 협력을 고려하지 않고 객체가 다양한 상황에서 사용될 수 있을 것이라는 막연한 추측을 기반으로 설계
-  >   - 대부분의 내부 구현이 퍼블릭 인터페이스에 그대로 노출되어 캡슐화의 원칙을 위반하는 변경에 취약한 설계를 얻음
+  > 	- 추측에 의한 설계(design-by-guessing strategy)
+  > 	 - 객체가 사용될 협력을 고려하지 않고 객체가 다양한 상황에서 사용될 수 있을 것이라는 막연한 추측을 기반으로 설계
+  > 	 - 대부분의 내부 구현이 퍼블릭 인터페이스에 그대로 노출되어 캡슐화의 원칙을 위반하는 변경에 취약한 설계를 얻음
 
 - 높은 결합도
 
@@ -346,7 +347,7 @@
 
   - 내부 구현을 변경했음에도 이 인터페이스에 의존하는 모든 클라이언트들도 함께 변경해야 함
 
-    > ~~~ ReservationAgency
+    > ~~~ java
     > public class ReservationAgency {
     > 	public Reservation reserve(Screening screening, Customer customer, int audienceCount) {
     > 		...
@@ -405,7 +406,7 @@
 - 캡슐화를 지켜라
   - 속성의 가시성을 private로 지정했더라도 접근자와 수정자를 통해 속성을 외부로 제공하고 있다면 캡슐화를 위반한 것
   
-    > ~~~ Rectangle
+    > ~~~ java
     > public class Rectangle {
     > 	private int left;
     > 	private int right;
@@ -424,7 +425,7 @@
     >
     > 이 사각형 이용하여 사각형의 너비와 높이를 증가시키는 코드가 필요할 경우
     >
-    > ~~~ AnyClass
+    > ~~~ java
     > public AnyClass {
     > 	void anyMethod(Rectangle rectangle, int multiple) {
     > 		rectangle.setRight(rectangle.getRight * multiple);
@@ -450,7 +451,7 @@
     >
     > 해결방법은 캡슐화를 강화
     >
-    > ~~~ Rectangle
+    > ~~~ java
     > class Rectangle {
     > 	public void enlarge(int multiple) {
     > 		right *= multiple;
@@ -481,7 +482,7 @@
     >
     > 1. 어떤 데이터를 관리해야 하는가 (이미 앞에서 결정해 놓았지!)
     >
-    > ~~~ 
+    > ~~~ java
     > public class DiscountCondition {
     > 	private DiscountConditionType type;
     > 	private int sequence;
@@ -501,7 +502,7 @@
     >
     >    - 두 할인 조건을 판단할 수 있도록 두 개의 isDiscountable이 필요
     >
-    > ~~~ 
+    > ~~~ java
     > public class DiscountCondition{
     > 	...
     > 	public boolean isDiscountable(DayOfWeek dayOfWeek, LocalTime time) {
@@ -522,7 +523,7 @@
     > - 요금 계산을 위한 할인 정책 3가지 (금액, 비율, 미적용)
     > - 따라서 할인 정책의 타입을 반환하는 getMovieType 메소드와 정책별 요금 계산하는 메소드 3가지 구현
     >
-    > ~~~ Movie
+    > ~~~ java
     > public class Movie {
     > 
     > 	private String title;
@@ -565,7 +566,7 @@
     >
     > Screening과 ReservationAgency 역시 같은 방법으로 오퍼레이션을 추가하면
     >
-    > ~~~ Screening
+    > ~~~ java
     > public class Screening {
     > 	...
     > 	/* mOVIE가 금액 할인이나 비율 할인 정책을 지원할 경우 Movie의 isDiscounttable 
@@ -580,7 +581,7 @@
     > }
     > ~~~
     >
-    > ~~~ 
+    > ~~~ java
     > public class ReservationAgency {
     > 	/* Screening의 calculateFee를 호출해 예매 요금 계산 후 그 요금을 이용하여 
     > 	Reservation 생성 */
