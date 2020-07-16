@@ -1,6 +1,6 @@
 ## 6장
 
-###### 협력과 메시지
+#### 협력과 메시지
 
 - 클라이언트-서버 모델
 
@@ -121,7 +121,7 @@
 
 
 
-###### 인터페이스와 설계 품질
+#### 인터페이스와 설계 품질
 
 - 좋은 인터페이스는 최소한의 인터페이스와 추상적인 인터페이스라는 조건을 만족해야 함
 
@@ -420,11 +420,304 @@
 
 
 
+#### 원칙의 함정
+
+- 디미터 법칙은 하나의 도트(.)를 강제하는 규칙이 아니다
+
+  ~~~java
+  IntStream.of(1, 15, 20, 3, 9).filter(x -> x > 10).distinct().count();
+  ~~~
+
+  - 위 코드의 of, filter, distinct 메소드는 모두 IntStream이라는 동일한 클래스의 인스턴스 반환
+  - 즉, 이들은 IntStream의 인스턴스를 또 다른 IntStream의 인스턴스로 변환 -> 디미터 법칙 위반 x
+  - 디미터 법칙은 객체 내부 구조가 외부로 노출되는 경우로 한정
+    - IntStream의 내부 구조 노출 없이 단지 IntStream을 또 다른 IntStream로 변환할 뿐 캡슐화는 유지
+  - 따라서 하나 이상의 도트(.)를 사용할 때 이 코드가 객체의 내부 구조를 노출하고 있는지 확인하라
+
+- 결합도와 응집도의 충돌
+
+  ~~~java
+  public class Theater {
+      
+      public void enter(Audience audience) {
+          // Theater는 Audience 내부에 포함된 Bag에 대해 질문 후 결과를 이용해 Bag 상태 변경
+          // 질문, 판단, 상태를 변경하는 코드를 Audience로 옮겨서 문제를 해결하자
+          if(audience.getBag().hasInvitation) {
+          	Ticket ticket = ticketSeller.setTicketOffice().getTicket();
+          	audience.getBag().setTicket(ticket);    
+          }
+          else {
+          	Ticket ticket = ticketSeller.getTicketOffice().getTicket();
+          	audience.getBag().minusAmount(ticket.getFee());
+              ticketSeller.getTicketOffice().plusAmount(ticket.getFee());
+              audience.getBag().setTicket(ticket); 
+          }
+      }
+  }
+  ~~~
+
+  ~~~java
+  public class Audience {
+      
+      // Audience에 위임 메소드 추가
+      // 결과적으로 상태와 함께 상태를 조작하는 행동도 포함하기 때문에 응집도가 높아짐
+      public Long buy(Ticket ticket) {
+          if(bag.hasInvitation) {
+              bag.setTicket(ticket);
+              return 0L;
+          }
+          else {
+              bag.setTicket(ticket);
+              bag.minusAmount(ticket.getFee());
+              return ticket.getFee();
+          }
+      }
+  }
+  ~~~
+
+  - 이처럼 위임 메소드를 통해 객체의 내부 구조를 감추는 것은 협력에 참여하는 객체들의 결합도를 낮출 수 있는 동시에 객체의 응집도를 높일 수 있는 가장 효과적인 방법!
+
+- 항상 디미터 법칙, '묻지 말고 시켜라'를 적용한 코드가 옳을까?
+
+  - 그 대상이 객체라면 내부 구조를 숨겨야 하므로 디비터 법칙을 따르는 것이 좋음
+
+  - 하지만 대상이 자료 구조라면 당연히 내부를 노출해야 하므로 디미터 법칙을 적용할 필요가 없음
+
+    ~~~ java
+    // PeriodCondition의 코드 중 screening의 내부 상태를 가져와 사용하기 때문에 캡슐화를 위반한다 생각 했을 때 
+    
+    // isDiscountable()을 Screening으로 이동시키고 PeriodCondtion에서 호출되도록 변경
+    public class Screening {
+        public boolean isDiscountable(...) {
+            return ...
+        } 
+    }
+    
+    public class PeriodCondition implements DiscountCondition {
+        public boolean isSatisfiedBy(Screening screening) {
+            return screening.isDiscountable(...);
+        }
+    }
+    ~~~
+
+    - 수정 후, Screening은 기간에 따른 할인 조건을 판단하는 책임을 가지게 됨.
+
+      -> 본질적인 책임은 영화를 예매하는 것으로, 결과적으로 응집도가 낮아짐
+
+    - 또한 PeriodCondition의 인스턴스 변수 목록이 변경될 경우 Screening이 영향을 받게 됨
+
+      -> 결합도 역시 높아짐
+
+    ~~~java
+    for(Movie each : movies) {
+        total += each.getFee();
+    }
+    // 이 코드에서 Movie에게 묻지 않고 movies 컬렉션에 포함된 전체 영화의 가격을 계산하는 방법이 있을까? No
+    
+    // Q. 그 이유가 movies는 자료 구조이기 때문인가요? 
+    ~~~
+
+  - 경우에 따라 다르므로 잘 판단하여 사용!
 
 
 
+#### 명령-쿼리 분리 원칙
 
+- 퍼블릭 인터페이스에 오퍼레이션을 정의할 때 참고할 수 있는 지침 제공
+- 루틴 : 어떤 절차를 묶어 호출 가능하도록 이름을 부여한 기능 모듈
+  - 프로시저와 함수로 구분
+  - 프로시저 : 정해진 절차에 따라 내부의 상태를 변경하는 루틴의 한 종류
+  - 프로시저는 부수효과를 발생시킬 수 있지만 값을 반환할 수 없음
+  - 함수는 값을 반환할 수 있지만 부수효과를 발생시킬 수 없음
+  - 부수 효과 : 함수 내의 실행으로 인해 함수 외부가 영향을 받는 것
+- 명령 : 객체의 상태를 수정하는 오퍼레이션 // 프로시저
+- 쿼리 : 객체와 관련된 정보를 반환하는 오퍼레이션 // 함수
+- 명령과 쿼리를 분리하기 위한 규칙
+  - 객체의 상태를 변경하는 명령은 반환값을 가질 수 없음 (부수효과 발생 o, 리턴 가능 x)
+  - 객체의 정보를 반환하는 쿼리는 상태를 변경할 수 없음 (부수효과 발생 x, 리턴 가능 o)
 
+- 명령-쿼리 인터페이스 : 명령-쿼리 분리 원칙에 따라 작성된 객체의 인터페이스
+
+- 기계 메타포
+
+  - 인터페이스는 두 가지 형태의 버튼을 가짐
+
+  - 둥근 버튼 : 기계의 현재 상태를 출력하지만 상태는 변경하지 않음 -> 쿼리 메소드
+
+  - 네모 버튼 : 기계의 상태를 변경하지만 변경된 상태의 어떠한 정보도 외부로 공개하지 않음 -> 명령 메소드
+
+    - insert 버튼을 눌렀다 -> 정보 삽입 -> 내부 변경 -> 부수효과 발생 -> 보여지는 값은 없음 -> 명령 !
+
+    - first 버튼을 눌렀다 -> 데이터가 바뀐 것이 없으므로 계속 눌러도 같은 값 -> 부수효과 발생 x -> 보여지는 값이 있음 -> 쿼리 !
+
+      
+
+- 반복 일정의 명령과 쿼리 분리하기
+
+  ~~~java
+  public class Event {
+      
+      private String subject;
+      private LocalDateTime from;
+      private Duration duration;
+      
+      ...
+      
+      // 생성된 스케쥴이 반복 일정에 부합하는지에 따라 true, false 만을 반환해 주면 됨 (쿼리)
+      public boolean isSatisfied(RecurringSchedule schedule) {
+          if(반복 일정과 생성된 스케쥴의 요일, 시작 시간, 소요 시간 중 하나라도 맞지 않는다면) {
+              // 요놈봐라? 쿼리에 상태를 수정시키는 명령이 숨어있다 !!
+              reschedule(schedule);
+              // 명령 처리 후 false를 반환 -> 즉, 상태가 변한 후에 값을 반환해버렸다
+              return false;
+          }
+          return true;
+      }
+      
+      private void reschedule(RecurringSchedule schedule) {
+          
+          from = LocalDateTime.of(from.toLocalDate().plusDays(dayDistance(schedule)),
+                                  schedule.getFrim());
+          duration = schedule.getDuration();
+      }
+      
+      // 반복 일정과 생성된 스케쥴의 날짜 차이
+      private long daysDistance(RecurringSchedule schedule) {
+          return schedule.getDayOfWeek().getValue() = from.getDayOfWeek().getValue();
+      }
+  }
+  ~~~
+
+  - isSatisfied()가 명령, 쿼리 두 가지의 역할을 동시엥 수행하고 있었기에 버그가 발생했던 것
+    - Event가 RecurringSchedule의 조건에 부합하는지를 판단 후 true, false 반환 - 쿼리
+    - Event가 RecurringSchedule의 조건에 부합하지 않을 경우 Event의 상태를 조건에 부합하도록 변경 - 명령
+
+  ~~~java
+  public class Event {
+       
+      // reschedule(schedule);를 제거함으로써 순수한 쿼리가 됨
+      public boolean isSatisfied(RecurringSchedule schedule) {
+          if(반복 일정과 생성된 스케쥴의 요일, 시작 시간, 소요 시간 중 하나라도 맞지 않는다면) {
+              reschedule(schedule);
+              return false;
+          }
+          return true;
+      }
+      
+      // public으로 바꾸어 인터페이스만 보고도 isSatisfied는 쿼리, reschedule은 명령이라는 것을 한번에 알 수 있게 됨
+      public void reschedule(RecurringSchedule schedule) {
+          
+          from = LocalDateTime.of(from.toLocalDate().plusDays(dayDistance(schedule)),
+                                  schedule.getFrim());
+          duration = schedule.getDuration();
+      }
+     
+      private long daysDistance(RecurringSchedule schedule) {
+          return schedule.getDayOfWeek().getValue() = from.getDayOfWeek().getValue();
+      }
+  }
+  
+  // 조건을 만족시키지 않을 경우 Event를 사용하는 쪽에서 reschedule 메소드를 호출할지 결정
+  if(!event.isSatisfied(schedule)) {
+      event.reschedule(schedule);
+  }
+  ~~~
+
+- 명령-쿼리 분리와 참조 투명성
+
+  - 참조 투명성 : 어떤 표현식 e가 있을 때 e의 값으로 e가 나타나는 모든 위치를 교체하더라도 결과가 달라지지 않는 특성
+
+    ~~~Math
+    f(1) + f(1) = 6
+    f(1) * 2 = 6
+    f(1) - 1 = 2
+    
+    여기서 f(1) 값은 3 이라는 것을 알 수 있고, f(1)을 모두 3으로 바꿔도 값이 동일하다.
+    f(1) = e, 3 = e의 값
+    이처럼 참조 투명성은 식을 값으로 치환하는 방법을 통해 결과를 쉽게 계산 가능
+    이렇게 말할 수 있는 이유는 f(1) = 3라는 것이 변하지 않기 때문 (불변성)
+    즉, 불변성은 부수효과가 발생하지 않는다는 말(참조 투명성을 만족시킨다)과 동일 !
+    
+    또한 참조 투명성의 장점은 식의 순서를 변경하더라도 결과가 달라지지 않는다는 점
+    ~~~
+
+  - 참조 투명성의 장점
+
+    - 모든 함수를 이미 알고 있는 하나의 결과값으로 대체할 수 있기 때문에 식을 쉽게 계산 가능
+    - 모든 곳에서 함수의 결과 값이 동일하기 때문에 식의 순서를 변경하더라도 각 식의 결과는 달라지지 않음
+
+  - 객체지향 패러다임은 객체의 상태 변경이라는 부수효과를 기반으로 하기 때문에 참조 투명성은 예외에 가까움
+
+  - 그러므로 명령과 쿼리를 분리함으로써 명령형 언어의 틀 안에서 참조 투명성(referntal transparency)의 장점을 제한적이나마 누릴 수 있게 됨
+
+  - 명령형 프로그래밍 : 부수효과를 기반으로 하는 프로그래밍 방식
+
+  - 함수형 프로그래밍 : 부수효과가 존재하지 않는 수학적인 함수에 기반 
+
+    -> 참조 투명성의 장점 극대화, 명령형보다 실행 결과를 이해하고 예측하기 더 쉬움
+
+    
+
+- 책임에 초점을 맞춰라
+
+  - 메시지를 먼저 선택하는 방식의 긍정적인 영향
+
+    - 메시지를 먼저 결정하면 두 객체 사이의 구조적인 결합도를 낮출 수 있음.
+
+      -> 의도적으로 디미터 법칙을 위반할 위험 최소화
+
+    - 클라이언트 관점에서 메시지를 선택하기 때문에 필요한 정보를 물을 필요 없이 메시지를 전송
+
+      -> '묻지 말고 시켜라' 스타일에 따라 협력을 구조화하게 됨
+
+    - 메시지를 먼저 선택한다는 것은 메시지를 전송하는 클라이언트 관점에서 메시지의 이름을 정한다는 것
+
+      -> 그 이름에는 클라이언트가 무엇을 원하는지 포함 - 의도를 드러내는 인터페이스
+
+    - 메시지를 먼저 선택하면, 협력 속에서 객체의 상태를 예측하고 이해하기 쉽게 만들기 위한 방법을 고민하게 됨
+
+      -> 예측 가능한 협력을 만들기 위해 명령-쿼리를 분리하게 됨
+
+  - 계약에 의한 설계(Design by Contract, DBC)
+
+    - 실행 시점에 필요한 구체적인 제약이나 조건을 명확하게 표현할 수 없기 때문에 제안된 개념
+    - 즉, 어떤 조건일 때 오퍼레이션을 호출할 수 있고 어떤 조건일 때 결과를 반환 받을 수 없는지 표현 불가하기 때문에 이를 해결하기 위한 개념
+    - 프로그램 모듈들의 책임을 문서화하는데 초점을 맞춤
+    - 각각의 모듈이 가져야 하는 기능만큼만 동작하도록 함
+    - 선행조건 : 모듈을 호출하기 전 참이어야 하는 것
+    - 후행조건 : 모듈이 자기가 할 것이라고 보장하는 것
+    - 불변식 : 호출자의 입장에서 이 조건이 언제나 참이라고 보장하는 것
+
+    ~~~java
+    // 선행조건 : 인자로 받아오는 name이 null값이 되어서는 안됨
+    // 후행조건 : 모듈이 실행되고 나서 Person 클래스의 name이 제대로 변경되는 것
+    
+    class Person{
+    	private String name;
+    	pulbic void setName(final String name){
+    		this.name = name;
+    	}
+    
+    	public String getName(){
+    		return this.name;
+    	}
+    }
+    
+    //setName 메소드에 대한 DBC를 아래와 같이 구현
+    ...
+    	/**
+    	 *  @pre    name != null
+    	 *  @post   getName() == name
+    	 */
+    	pulbic void setName(final String name){
+    		this.name = name;
+    	}
+    ...
+    ~~~
+
+    [출처](https://kevinx64.net/198)
+
+    
 
 
 
