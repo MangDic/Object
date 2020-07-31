@@ -279,23 +279,99 @@ public class Movie {
 ~~~
 
 - 생성자의 인자로 전달받는 방법 vs 생성자 안에서 직접 생성하는 방법
-  - 가장 큰 차이는 퍼블릭 인터페이스를 통해 
+  - 가장 큰 차이는 퍼블릭 인터페이스를 통해 할인 정책을 설정할 수 있는 방법을 제공하는지 여부
+  - 생성자의 인자 전달
+    - Movie가 DiscountPolicy에 의존한다는 사실을 Movie의 퍼블릭 인터페이스에 드러냄
+    - setter나 메소드 인자를 사용하는 방식에도 동일
+    - 명시적인 의존성
+  - 생성자 안에서 직접 생성
+    - Movie 내부에서 AmountDiscountPolicy의 인스턴스를 직접 생성하면 DiscountPolicy에 의존한다는 사실을 감춤
+    - 숨겨진 의존성
+  - 의존성은 명시적으로 표현돼야 함
+    - 그래야 퍼블릭 인터페이스를 통해 컴파일타임 의존성을 적절한 런타임 의존성으로 교체 가능
+
+###### new는 해롭다
+
+- 결합도 측면에서 new가 해로운 이유
+  - 구체 클래스 이름을 직접 기술해야 함. 따라서 추상화가 아닌 구체 클래스에 의존 -> 결합도가 높아짐
+  - 구체 클래스뿐만 아니라 어떤 인자를 이용해 클래스의 생성자를 호출해야 하는지도 알아야 함 -> 지식의 양이 늘어남
+
+~~~java
+public class Movie {
+  
+  public Movie (...) {
+    // AmountDiscountPolicy를 생성하기 위해 생성자에 전달되는 인자를 알아야 함 -> 지식의 양 증가
+    // SequenceCondition, PeriodCondition에도 의존하게 만듦
+    this.disCountPolicy = new AmountDiscountPolicy(Money.won(800)),
+    											new SequenceCondition(1),
+    											new PeriodCondition(DayOfWeek.MONDAY, ...),
+    											...
+  }
+}
+~~~
+
+- 인스턴스를 생성하는 로직과 생성된 인스턴스를 사용하는 로직을 분리하여 해결
+
+  ~~~ java
+  // Movie 클래스에는 AmountDiscountPolicy의 인스턴스에 메시지를 전송하는 코드만 남아있어야 함
+  // Movie는 AmountDiscountPolicy 인스턴스를 사용하는 책임만 남게 됨
+  public class Movie {
+    ...
+    private DiscountCondition discountCondition;
+    
+    public Movie(...) {
+      ...
+      this.discountCondition = discountCondition;
+    }
+  }
+  
+  // 이제 Movie가 AmountDiscountPolicy 인스턴스를 생성하지 않고 Movie 클라이언트가 생성
+  // AmountDiscountPolicy 인스턴스 생성 책임이 Movie 클라이언트로 옮겨짐
+  Movie avatar = new Movie("아바타", ...,
+                          new AmountDiscountPolicy(...), 
+                          new SequenceCondition(1), ...
+                          );
+  ~~~
+
+  - 생성의 책임을 클라이언트로 옮김
+    - Movie는 DiscountCondition의 모든 자식들과 협력 가능하게 됨
+
+
+
+###### 가끔은 생성해도 무방하다
+
+- 주로 협력하는 기본 객체를 설정하고 싶은 경우 이에 해당
+
+
+
+###### 표준 클래스에 대한 의존은 해롭지 않다
+
+- 의존성이 불편한 이유는 그것에 항상 변경에 대한 영향을 암시하기 때문
+- 자바의 경우 JDK에 포함된 표준 클래스가 이에 속함
+
+
+
+###### 컨텍스트 확장하기
 
 
 
 
 
+활동내용
 
+- 짧은 시간이었지만 영어 스피킹, 전공 과목과 관련된 스터디를 진행하고 몇 가지 공모전에 참여하였습니다. 
 
+참여소감 
 
+- 유유기지 지원 덕분에 하고싶었던 분야에 대해 더 폭 넓게 공부할 수 있어서 좋았습니다. 또한 유유기지 활동으로 팀원 사이 유대감이 더 깊어질 수 있었습니다. 
 
+향후계획
 
+- 스터디는 계속 진행하며 공부할 것이고, 활동기간동안 쌓아온 경험과 친분을 토대로 앞으로 더 많은 공모전에 참여하려고 합니다. 
 
+건의사항 
 
-
-
-
-
+- 없습니다~!~!
 
 
 
