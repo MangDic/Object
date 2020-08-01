@@ -341,6 +341,9 @@ public class Movie {
 ###### 가끔은 생성해도 무방하다
 
 - 주로 협력하는 기본 객체를 설정하고 싶은 경우 이에 해당
+- Movie가 대부분 AmountDiscountPolicy와 협력하고 가끔 PercentDiscountPolicy와 협력하는 경우
+  - 모든 경우에 인스턴스 생성 책임을 클라이언트로 옮길 경우 클라이언트들 사이 중복 코드가 늘어나며 Movie의 사용성도 나빠짐
+  - 기본 객체를 생성하는 생성자 추가, 이 생성자에서 DiscountPolicy의 인스턴스를 인자로 받는 생성자를 체이닝하여 해결
 
 
 
@@ -353,117 +356,55 @@ public class Movie {
 
 ###### 컨텍스트 확장하기
 
-
-
-
-
-활동내용
-
-- 짧은 시간이었지만 영어 스피킹, 전공 과목과 관련된 스터디를 진행하고 몇 가지 공모전에 참여하였습니다. 
-
-참여소감 
-
-- 유유기지 지원 덕분에 하고싶었던 분야에 대해 더 폭 넓게 공부할 수 있어서 좋았습니다. 또한 유유기지 활동으로 팀원 사이 유대감이 더 깊어질 수 있었습니다. 
-
-향후계획
-
-- 스터디는 계속 진행하며 공부할 것이고, 활동기간동안 쌓아온 경험과 친분을 토대로 앞으로 더 많은 공모전에 참여하려고 합니다. 
-
-건의사항 
-
-- 없습니다~!~!
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- 할인혜택을 제공하지 않는 경우
+  - DiscountPolicy를 상속받는 NoneDiscountPolicy를 추가
+  - Movie에 특별한 if문 추가 없이 구현이 가능
+
+- 중복 적용이 가능한 할인
+
+  - Movie가 하나 이상의 DiscountPolicy와 협력 가능해야 함
+
+  ~~~ java
+  public class OverlappedDiscountPolicy {
+    // Movie가 DiscountPolicy의 인스턴스들로 구성된 List를 인스턴스 변수로 갖게 함
+    private List<DiscountPolicy> discountPolicies = new ArrayList<>();
+    
+    public OverlappedDiscountPolicy(DiscountPolicy ... discountPolicies) {
+      this.discountPolicies = Arrays.asList(discountPolicies);
+    }
+    
+    @Override
+    protected Money getDiscountAmount(...) {
+      Money result = Money.ZERO;
+      for(DiscountPolicy each : discountPolicies) {
+        result = result.plus(...);
+      }
+      return result;
+    }
+  }
+  
+  // OverlappedDiscountPolicy의 인스턴스를 생성하여 Movie에 전달하는 것만으로 중복 할인 적용 가능
+  Movie avatar = new Movie("아바타", ... ,
+                          new OverlappedDiscountPolicy(new AmountDiscountPolicy(...), 
+                                                      new PercentDiscountPolicy(...)));
+  ~~~
+
+  - 설계가 유연해진 이유
+    - Movie가 DiscountPolicy라는 추상화에 의존
+    - 생성자를 통해 DiscountPolicy에 대한 의존성을 명시적으로 드러냄
+    - new와 같이 구체 클래스를 직접 다뤄야 하는 책임을 Movie 외부로 옮김
+    - Movie가 의존하는 추상화인 DiscountPolicy 클래스에 자식 클래스를 추가하여 간단하게 컨텍스트 확장 가능
+
+- 조합 가능한 행동
+  - 다양한 할인 정책이 필요한 컨텍스트에서 Movie를 재사용할 수 있었던 이유
+    - 코드 수정없이 협력 대상인 DiscountPolicy 인스턴스를 교체할 수 있기 때문
+    - Movie가 비율 할인 정책에 따라 요금 계산을 원한다면
+      - PercentDiscountPolicy의 인스턴스를 Movie에 연결
+    - Movie가 금액 할인 정책에 따라 요금 계산을 원한다면
+      - AmountDiscountPolicy의 인스턴스를 Movie에 연결
+    - Movie가 중복 할인을 원한다면
+      - OverappedDiscountPolicy의 인스턴스를 Movie에 연결
+  - 유연하고 재사용 가능한 설계
+    - 객체가 어떻게 하지는지를 나열하지 않고도 객체들의 조합을 통해 무엇을 하는지 표현하는 클래스들로 구성됨
+    - 따라서 클래스의 인스턴스를 생성하는 코드를 보는 것만으로도 어떤 일을 하는지 파악 가능
 
